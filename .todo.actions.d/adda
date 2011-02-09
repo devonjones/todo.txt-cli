@@ -4,9 +4,8 @@ action=$1
 shift
 
 [ "$action" = "usage" ] && {
-  echo "  Add and prioritize A:"
-  curcmd=`basename $0`
-  echo "    $curcmd \"THING I NEED TO DO +project @context\""
+  echo "  $(basename $0) \"THING I NEED TO DO +project @context\""
+  echo "      Add and prioritize A"
   echo "      Add an item and prioritize it A in one step"
   echo ""
   exit
