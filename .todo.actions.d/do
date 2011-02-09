@@ -1,0 +1,46 @@
+#!/bin/bash
+
+action=$1
+#shift
+
+function usage() {
+  echo "  $(basename $0) ITEM#[, ITEM#, ITEM#, ...]"
+  echo "    Marks task(s) on line ITEM# as done in todo.txt."
+  echo "    If task is in repeat.txt, readds task with t:<date>"
+  echo ""
+  exit
+}
+
+[ "$action" = "usage" ] && {
+    usage
+}
+TODO_REPEAT_FILE=$TODO_DIR/repeat.txt
+
+errmsg="usage: $TODO_SH do ITEM#[, ITEM#, ITEM#, ...]"
+# shift so we get arguments to the do request
+shift;
+[ "$#" -eq 0 ] && usage
+
+for item in `echo $* | tr ',' ' ' | tr ' ' '\n' | sort -r -n`; do
+    [ -z "$item" ] && usage
+    [[ "$item" = +([0-9]) ]] || usage
+
+    todo=$(sed "$item!d" "$TODO_FILE")
+    [ -z "$todo" ] && die "TODO: No task $item."
+
+    # Check if this item has already been done
+    if [ `echo $todo | grep -c "^x "` -eq 0 ] ; then
+        now=`date '+%Y-%m-%d'`
+        repeat=`echo $todo | sed "s/^(.) //" | sed "s/^[0-9]\{4\}-[0-9][0-9]-[0-9][0-9] //" | sed "s/t:[0-9]\{4\}-[0-9][0-9]-[0-9][0-9]//" | sed "s/^ *//" | sed "s/ *$//"`
+        rule=`grep "$repeat" "$TODO_REPEAT_FILE"`
+        dater=`echo $rule | sed "s/.* repeat:\(.*\)$/\1/"`
+        "$TODO_SH" command do $item
+        if [ -n "$rule" ]
+        then
+          "$TODO_SH" command add $repeat "t:"`date -d "$dater" +%F`
+        fi
+    else
+        echo "$item is already marked done"
+    fi
+done
+
